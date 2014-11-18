@@ -1,0 +1,5 @@
+Os códigos podem ser encontrados dentro da pasta 'src'. Para roda-los:
+
+octave half
+octave bayer
+octave floyd

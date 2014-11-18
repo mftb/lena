@@ -1,0 +1,32 @@
+#! octave-interpreter-name -qf
+
+# ======
+# Func
+# ======
+
+function imgAfterBayer = getImgAfterBayer(img)
+    numberOfRows = rows( img );
+    numberOfColumns = columns( img );
+
+    mask = [0, 12, 3, 15; 8, 4, 11, 7; 2, 14, 1, 13; 10, 6, 9, 5];
+
+    normalizedImg = round( img / 255 * 9 );
+    quadrupledMatrix = kron( normalizedImg, ones(4, 4) );
+    quadrupledMask = repmat( mask, numberOfRows, numberOfColumns );
+
+    imgAfterBayer = ( quadrupledMatrix > quadrupledMask ) * 255;    
+endfunction
+
+# ======
+# Script
+# ======
+
+imgBaboon = imread( "../in/baboon.pgm" );
+imgMonarch = imread( "../in/monarch.pgm" );
+
+imgBaboonAfterBayer = getImgAfterBayer( imgBaboon );
+imgMonarchAfterBayer = getImgAfterBayer( imgMonarch );
+
+imwrite( imgBaboonAfterBayer, "../out/bayer/baboon.pbm" );
+imwrite( imgMonarchAfterBayer, "../out/bayer/monarch.pbm" );
+

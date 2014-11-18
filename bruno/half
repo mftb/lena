@@ -1,0 +1,32 @@
+#! octave-interpreter-name -qf
+
+# ======
+# Func
+# ======
+
+function imgAfterHalf = getImgAfterHalf(img)
+    numberOfRows = rows( img );
+    numberOfColumns = columns( img );
+
+    mask = [6, 8, 4; 1, 0, 3; 5, 2, 7];
+
+    normalizedImg = round( img / 255 * 9 );
+    tripledMatrix = kron( normalizedImg, ones(3, 3) );
+    tripledMask = repmat( mask, numberOfRows, numberOfColumns );
+
+    imgAfterHalf = ( tripledMatrix > tripledMask ) * 255;    
+endfunction
+
+# ======
+# Script
+# ======
+
+imgBaboon = imread( "../in/baboon.pgm" );
+imgMonarch = imread( "../in/monarch.pgm" );
+
+imgBaboonAfterHalf = getImgAfterHalf( imgBaboon );
+imgMonarchAfterHalf = getImgAfterHalf( imgMonarch );
+
+imwrite( imgBaboonAfterHalf, "../out/half/baboon.pbm" );
+imwrite( imgMonarchAfterHalf, "../out/half/monarch.pbm" );
+
