@@ -3,70 +3,50 @@ pkg load image
 # Matheus Ferreira Tavares Boy
 # RA 103501
 
+arg_list = argv();
+img_in = arg_list{1};
+img = imread(img_in);
 
+# half-toning
+matrix_3 = [6, 8, 4; 1, 0, 3; 5, 2, 7];
+# normalization 0-9
+normalized_half = floor((im2double(img)) * 9);
+normalized_half = kron(normalized_half, ones([3, 3]));
+mask_half = repmat(matrix_3, size(img));
+# applies limiarization
+result_half = (normalized_half > mask_half) * 255;
+imwrite(result_half, "lab03_half.pbm");
 
-# 1.1 Pontilhado ordenado
-function result = ordenado(img, n)
-	if (n == 3)
-		# Dez Padroes
-		matriz = [6, 8, 4; 1, 0, 3; 5, 2, 7]
-	elseif (n == 4)
-		# Bayer
-		matriz = [0, 12, 3, 15; 8, 4, 11, 7; 2, 14, 1, 13; 10, 6, 9, 5]
-	else
-		error("Invalid value");
-	end
+# bayer
+matrix_4 = [0, 12, 3, 15; 8, 4, 11, 7; 2, 14, 1, 13; 10, 6, 9, 5];
+# normalization 0-16
+normalized_bayer = floor((im2double(img)) * 16);
+normalized_bayer = kron(normalized_bayer, ones([4, 4]));
+mask_bayer = repmat(matrix_4, size(img));
+# applies limiarization
+result_bayer = (normalized_bayer > mask_bayer) * 255;
+imwrite(result_bayer, "lab03_bayer.pbm");
 
-	# Normaliza a imagem
-	normaliza = floor((im2double(img))*((n*n) + 1))
-	# Replica cada pixel para ficar do tamanho da matriz de padroes
-	normaliza = kron(normaliza,ones(size(matriz)))
-	# Replica a matriz de padroes para ficar do tamanho da imagem
-	mask = repmat(matriz,size(img))
-	result = (normaliza > mask)*255
+# (pink) floyd
+new_img = double(padarray(img, [1, 1], 'symmetric'));
+[nr, nc] = size(new_img);
+result_pink_floyd = ones([nr, nc]);
+mask_pink_floyd = [0, 0, 0; 0, 0, 7/16; 3/16, 5/16, 1/16];
+for i = 2 : (nr - 1)
+	for j = 2 : (nc - 1)
+	    x = i;
+	    # alternate sweep
+	    if (mod(x, 2))
+	        y = j;
+	    else
+	        y = nc - (j - 1);
+	    endif
+	    result_pink_floyd(x, y) = (new_img(x, y) > 128) * 255;
+	    err = double(new_img(x, y) - result_pink_floyd(x, y));
+	    new_img(x-1:x+1, y-1:y+1) = new_img(x-1:x+1, y-1:y+1) + mask_pink_floyd * err;
+	endfor
+endfor
+# crops the matrix out of the padding
+result_pink_floyd = result_pink_floyd(2:nr-1, 2:nc-1);
+imwrite(result_pink_floyd, "lab03_floyd.pbm");
 
-endfunction
-
-##########################################################################################
-# 1.2 Pontilhado por difusão
-function result = difusao(img)
-	img = double(padarray(img, [1, 1], 'symmetric'))
-	[x, y] = size(img)
-	result = zeros(size(img))
-	floyd = [0,0,0;0,0,7/16;3/16,5/16,1/16]
-
-	for i = 2 : (x - 1)
-		if (mod(i,2) == 0)
-			for j = 2 : (y - 1)
-				result(i,j) = (img(i,j) > 128)*255
-				erro = double(img(i,j) - result(i, j))
-				img(i-1:i+1, j-1:j+1) += floyd*erro
-			end
-		else
-			j = (y - 1)
-			while(j > 1)
-				result(i,j) = (img(i,j) > 128)*255
-				erro = double(img(i,j) - result(i,j))
-				img(i-1:i+1, j-1:j+1) += floyd*erro
-				j--	
-			end
-		end
-	end
-
-	result = result(2:x-1, 2:y-1)
-endfunction
-
-##########################################################################################
-
-# Carrega os argumentos
-args = argv()
-img = imread(args{1})
-
-result = ordenado(img, 3)
-imwrite(result, strcat(args{1}(1 : end-4), "-dez.png"))
-
-result = ordenado(img, 4)
-imwrite(result, strcat(args{1}(1 : end-4), "-bayer.png"))
-
-result = difusao(img)
-imwrite(result, strcat(args{1}(1 : end-4), "-floyd.png"))
